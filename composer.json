@@ -1,0 +1,51 @@
+{
+    "name": "mlocati/payway",
+    "description": "Unofficial BCC PayWay (IGFS Buy Now) client library for PHP",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "bcc",
+        "banca di credito cooperativo",
+        "banche di credito cooperativo",
+        "payway",
+        "igfs",
+        "buy now"
+    ],
+    "authors": [
+        {
+            "name": "Michele Locati",
+            "email": "michele@locati.it"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "MLocati\\PayWay\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "MLocati\\PayWay\\Test\\": "test/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">= 5.5",
+        "ext-dom": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^4.8.36 || ^6.5 || ^9.6",
+        "punic/punic": "^3.8"
+    },
+    "suggest": {
+        "ext-curl": "To use the built-in HTTP driver"
+    },
+    "config": {
+        "optimize-autoloader" : true,
+        "preferred-install": "dist",
+        "sort-packages" : true
+    },
+    "scripts": {
+        "test": "phpunit --verbose"
+    },
+    "$schema": "https://raw.githubusercontent.com/composer/composer/main/res/composer-schema.json"
+}

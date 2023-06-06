@@ -1,0 +1,377 @@
+<?php
+
+const XSD_BASEDTO = 0;
+const XSD_PAYMENT_INIT = 1;
+
+/**
+ * @var string $argv
+ */
+
+/**
+ * @param string $thisCmd
+ */
+function showSyntax($thisCmd)
+{
+    echo <<<EOT
+Syntax: {$thisCmd} [-h|--help|/?] <services-url> [outputDir]
+
+Where <services-url> is something like:
+https://domain/UNI_CG_SERVICES/services
+
+EOT
+    ;
+}
+
+/**
+ * @param string[] $argv
+ *
+ * @return int
+ */
+function main(array $argv)
+{
+    if (array_intersect($argv, ['-h', '--help', '/?']) !== []) {
+        showSyntax($argv[0]);
+        return 0;
+    }
+    $outputDir = '';
+    switch (count($argv)) {
+        case 3:
+            $outputDir = getOutputDir($argv[2]);
+            // nobreak
+        case 2:
+            $servicesUrl = filter_var($argv[1], FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED);
+            if (!$servicesUrl) {
+                showSyntax($argv[0]);
+                return 1;
+            }
+            $servicesUrl = rtrim($servicesUrl, '/') . '/';
+            break;
+        default:
+            showSyntax($argv[0]);
+            return 1;
+    }
+    if ($outputDir === '') {
+        $outputDir = getOutputDir();
+    }
+    Punic\Data::setDefaultLocale('en-US');
+
+    echo 'Downloading XML data... ';
+    $xmls = fetchXml($servicesUrl);
+    $xpaths = buildXPaths($xmls);
+    echo "done.\n";
+
+    echo 'Building language codes... ';
+    $codes = extractLanguageCodes($xpaths);
+    saveFile("{$outputDir}/languages.php", generateLanguageDictionary($codes));
+    echo "done.\n";
+
+    echo 'Building currency codes... ';
+    $codes = extractCurrencyCodes($xpaths);
+    saveFile("{$outputDir}/currencies.php", generateCurrencyDictionary($codes));
+    echo "done.\n";
+
+    echo 'Building country codes... ';
+    $codes = extractCountryCodes($xpaths);
+    saveFile("{$outputDir}/countries.php", generateCountryDictionary($codes));
+    echo "done.\n";
+
+    echo 'Building txIndicatorType codes... ';
+    $codes = extractTxIndicatorTypeCodes($xpaths);
+    saveFile("{$outputDir}/tx_indicator_type.php", generateList($codes));
+    echo "done.\n";
+
+    echo 'Building scaExemptionType codes... ';
+    $codes = extractScaExemptionTypeCodes($xpaths);
+    saveFile("{$outputDir}/sca_exemption_type.php", generateList($codes));
+    echo "done.\n";
+
+    echo 'Building trType codes... ';
+    $codes = extractTrTypeCodes($xpaths);
+    saveFile("{$outputDir}/tr_type.php", generateList($codes));
+    echo "done.\n";
+}
+
+/**
+ * @param string $hint
+ *
+ * @return string
+ */
+function getOutputDir($hint = '')
+{
+    if ($hint === '') {
+        $hint = __DIR__ . '/../src/data';
+    }
+    set_error_handler(static function () {}, -1);
+    try {
+        $path = realpath($hint);
+    } finally {
+        restore_error_handler();
+    }
+    if ($path === false) {
+        $path = '';
+    } else {
+        $path = rtrim(str_replace(DIRECTORY_SEPARATOR, '/', $path), '/');
+    }
+    if ($path === '') {
+        throw new RuntimeException("Failed to find the directory '{$hint}'");
+    }
+    if (!is_dir($path)) {
+        throw new RuntimeException("Failed to find the directory '{$path}'");
+    }
+    if (!is_writable($path)) {
+        throw new RuntimeException("The directory '{$path}' is not writable");
+    }
+
+    return $path;
+}
+
+/**
+ * @param string $servicesUrl
+ *
+ * @return string[]
+ */
+function fetchXml($servicesUrl)
+{
+    $result = [];
+    foreach([
+        'PaymentInitGatewayPort?xsd=dto/BaseDTO.xsd' => XSD_BASEDTO,
+        'PaymentInitGatewayPort?xsd=dto/init/PaymentInit.xsd' => XSD_PAYMENT_INIT,
+    ] as $suffix => $key) {
+        $url = $servicesUrl . $suffix;
+        $xml = file_get_contents($url);
+        if (!$xml) {
+            throw new RuntimeException("Failed to download file {$url}");
+        }
+        $result[$key] = $xml;
+    }
+
+    return $result;
+}
+
+/**
+ * @param string[] $xmls
+ *
+ * @return DOMXPath[]
+ */
+function buildXPaths(array $xmls)
+{
+    $flags = LIBXML_NOCDATA | LIBXML_NOERROR | LIBXML_NOWARNING;
+    if (defined('LIBXML_BIGLINES')) {
+        $flags |= LIBXML_BIGLINES;
+    }
+    $result = [];
+    foreach ($xmls as $key => $xml) {
+        $doc = new DOMDocument('1.0', 'UTF-8');
+        if (!$doc->loadXML($xml, $flags)) {
+            throw new RuntimeException('Failed to parse XML');
+        }
+        $xpath = new DOMXPath($doc);
+        $xpath->registerNamespace('xs', 'http://www.w3.org/2001/XMLSchema');
+        $result[$key] = $xpath;
+    }
+
+    return $result;
+}
+
+/**
+ * @param DOMXPath[] $xpaths
+ *
+ * @return string[]
+ */
+function extractLanguageCodes(array $xpaths)
+{
+    return extractCodes(
+        $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="Language"]/xs:restriction/xs:enumeration'),
+        '/^[A-Z][A-Z]$/'
+        );
+}
+
+/**
+ * @param DOMXPath[] $xpaths
+ *
+ * @return string[]
+ */
+function extractCurrencyCodes(array $xpaths)
+{
+    return extractCodes(
+        $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="Currency"]/xs:restriction/xs:enumeration'),
+        '/^[A-Z][A-Z][A-Z]$/'
+        );
+}
+
+/**
+ * @param DOMXPath[] $xpaths
+ *
+ * @return string[]
+ */
+function extractCountryCodes(array $xpaths)
+{
+    return extractCodes(
+        $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="Country"]/xs:restriction/xs:enumeration'),
+        '/^[A-Z][A-Z][A-Z]$/'
+        );
+}
+
+/**
+ * @param DOMXPath[] $xpaths
+ *
+ * @return string[]
+ */
+function extractTxIndicatorTypeCodes(array $xpaths)
+{
+    return extractCodes(
+        $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="txIndicatorType"]/xs:restriction/xs:enumeration'),
+        '/^[A-Z_]+/'
+    );
+}
+
+/**
+ * @return string[]
+ */
+function extractScaExemptionTypeCodes(array $xpaths)
+{
+    return extractCodes(
+        $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="scaExemptionType"]/xs:restriction/xs:enumeration'),
+        '/^[A-Z_]+/'
+        );
+}
+
+/**
+ * @return string[]
+ */
+function extractTrTypeCodes(array $xpaths)
+{
+    return extractCodes(
+        $xpaths[XSD_PAYMENT_INIT]->query('/xs:schema/xs:complexType[@name="PaymentInitRequest"]/xs:complexContent/xs:extension/xs:sequence/xs:element[@name="trType"]/xs:simpleType/xs:restriction/xs:enumeration'),
+        '/^[A-Z_]+/'
+    );
+}
+
+/**
+ * @param string $rx
+ *
+ * @return string[]
+ */
+function extractCodes(DOMNodeList $nodes, $rx)
+{
+    $result = [];
+    foreach ($nodes as $node) {
+        $value = $node->getAttribute('value');
+        if (!is_string($value) || !preg_match($rx, $value)) {
+            throw new RuntimeException('Invalid XML');
+        }
+        $result[] = $value;
+    }
+    if ($result === []) {
+        throw new RuntimeException('Invalid XML');
+    }
+    natcasesort($result);
+
+    return $result;
+}
+/**
+ * @param string[] $codes
+ *
+ * @return string
+ */
+function generateLanguageDictionary(array $codes)
+{
+    $php = "<?php\n\nreturn [";
+    foreach ($codes as $code) {
+        $name = Punic\Language::getName($code);
+        $php .= "\n    " . var_export($code, true) . ' => ' . var_export($name, true) . ',';
+    }
+    $php .= "\n];\n";
+
+    return $php;
+}
+
+/**
+ * @param string[] $codes
+ *
+ * @return string
+ */
+function generateCurrencyDictionary(array $codes)
+{
+    $php = "<?php\n\nreturn [";
+    foreach ($codes as $code) {
+        $name = Punic\Currency::getName($code) ?: $code;
+        $php .= "\n    " . var_export($code, true) . ' => ' . var_export($name, true) . ',';
+    }
+    $php .= "\n];\n";
+
+    return $php;
+}
+
+/**
+ * @param string[] $codes
+ *
+ * @return string
+ */
+function generateCountryDictionary(array $codes)
+{
+    $php = "<?php\n\nreturn [";
+    foreach ($codes as $code) {
+        $name = '';
+        $iso2 = Punic\Territory::getByCode($code, 'alpha3');
+        if ($iso2) {
+            $name = Punic\Territory::getName($iso2);
+        }
+        if (!$name) {
+            $name = $code;
+        }
+        $php .= "\n    " . var_export($code, true) . ' => ' . var_export($name, true) . ',';
+    }
+    $php .= "\n];\n";
+
+    return $php;
+}
+
+/**
+ * @param string[] $codes
+ *
+ * @return string
+ */
+function generateList(array $codes)
+{
+    $php = "<?php\n\nreturn [";
+    foreach ($codes as $code) {
+        $php .= "\n    " . var_export($code, true) . ',';
+    }
+    $php .= "\n];\n";
+
+    return $php;
+}
+
+/**
+ * @param string $fileName
+ * @param string $php
+ */
+function saveFile($path, $php)
+{
+    if (!file_put_contents($path, $php)) {
+        throw new RuntimeException("Failed to save file '{$path}'");
+    }
+}
+
+set_error_handler(static function ($errno, $errstr, $errfile, $errline) {
+    $message = trim((string) $errstr);
+    if ($message === '') {
+        $message = "Error {$errno}";
+    }
+    if ($errfile) {
+        $message .= "\nFile: {$errfile}";
+        if ($errline) {
+            $message .= "\nLine: {$errline}";
+        }
+    }
+    throw new RuntimeException($message);
+}, -1);
+
+try {
+    require_once __DIR__ . '/../vendor/autoload.php';
+    return main($argv);
+} catch (Exception $x) {
+    fwrite(STDERR, trim($x->getMessage()) . "\n");
+    return 1;
+}

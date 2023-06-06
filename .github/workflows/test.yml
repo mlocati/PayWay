@@ -1,0 +1,107 @@
+name: Tests
+
+on:
+  push:
+    paths-ignore:
+      - "**/**.md"
+      - .gitattributes
+      - .gitignore
+      - LICENSE
+    branches:
+      - main
+    tags-ignore:
+      - '**'
+  pull_request:
+    paths-ignore:
+        - "**/**.md"
+        - .gitattributes
+        - .gitignore
+        - LICENSE
+
+jobs:
+  phpcs:
+    name: Check coding style
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          tools: php-cs-fixer
+          coverage: none
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Check PHP coding style
+        run: >
+          php-cs-fixer fix .
+          --path-mode=intersection
+          --config=.php-cs-fixer.dist.php
+          --dry-run
+          --using-cache=no
+          --diff
+          --show-progress=none
+          --ansi
+          --no-interaction
+  phpunit:
+    name: Run PHPUnit
+    env:
+        CODE_COVERAGE_TOOL: none
+        PHPUNIT_FLAGS: ""
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            php-version: "5.5"
+          - os: ubuntu-latest
+            php-version: "5.6"
+          - os: ubuntu-latest
+            php-version: "7.0"
+          - os: ubuntu-latest
+            php-version: "7.1"
+          - os: ubuntu-latest
+            php-version: "7.2"
+          - os: ubuntu-latest
+            php-version: "7.3"
+          - os: ubuntu-latest
+            php-version: "7.4"
+          - os: ubuntu-latest
+            php-version: "8.0"
+          - os: ubuntu-latest
+            php-version: "8.1"
+          - os: ubuntu-latest
+            php-version: "8.2"
+          - os: windows-latest
+            php-version: "5.5"
+          - os: windows-latest
+            php-version: "7.4"
+          - os: windows-latest
+            php-version: "8.2"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Set code coverage
+        if: startsWith(matrix.os, 'ubuntu') && matrix.php-version == '8.2'
+        run: |
+          echo "CODE_COVERAGE_TOOL=xdebug" >>$GITHUB_ENV
+          echo "PHPUNIT_FLAGS=--coverage-clover code-coverage.xml" >>$GITHUB_ENV
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.2
+          tools: php-cs-fixer
+          coverage: ${{ env.CODE_COVERAGE_TOOL }}
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Validate composer.json
+        run: composer --strict --ansi --no-interaction --no-cache validate
+      - name: Install Composer dependencies
+        run: composer --no-progress --ansi --no-interaction --no-cache update
+      - name: Run PHPUnit
+        run: composer --ansi --no-interaction run-script test -- ${{ env.PHPUNIT_FLAGS }}
+      - name: Download Coveralls
+        if: env.CODE_COVERAGE_TOOL != 'none'
+        run: curl -sSLf -o php-coveralls.phar https://github.com/php-coveralls/php-coveralls/releases/latest/download/php-coveralls.phar
+      - name: Upload Coveralls data
+        if: env.CODE_COVERAGE_TOOL != 'none'
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: php php-coveralls.phar --coverage_clover=code-coverage.xml --json_path=coveralls-upload.json --ansi --no-interaction -vvv
