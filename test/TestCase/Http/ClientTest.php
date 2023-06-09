@@ -17,6 +17,7 @@ class ClientTest extends TestCase
      * @var \MLocati\PayWay\Init\Request
      */
     private static $sampleInitRequest;
+
     public static function provideWrongUrls()
     {
         return [

@@ -18,8 +18,7 @@ Syntax: {$thisCmd} [-h|--help|/?] <services-url> [outputDir]
 Where <services-url> is something like:
 https://domain/UNI_CG_SERVICES/services
 
-EOT
-    ;
+EOT;
 }
 
 /**
@@ -31,23 +30,26 @@ function main(array $argv)
 {
     if (array_intersect($argv, ['-h', '--help', '/?']) !== []) {
         showSyntax($argv[0]);
+
         return 0;
     }
     $outputDir = '';
     switch (count($argv)) {
         case 3:
             $outputDir = getOutputDir($argv[2]);
-            // nobreak
+            // no break
         case 2:
             $servicesUrl = filter_var($argv[1], FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED);
             if (!$servicesUrl) {
                 showSyntax($argv[0]);
+
                 return 1;
             }
             $servicesUrl = rtrim($servicesUrl, '/') . '/';
             break;
         default:
             showSyntax($argv[0]);
+
             return 1;
     }
     if ($outputDir === '') {
@@ -72,7 +74,9 @@ function main(array $argv)
 
     echo 'Building country codes... ';
     $codes = extractCountryCodes($xpaths);
-    saveFile("{$outputDir}/countries.php", generateCountryDictionary($codes));
+    $infos = extractCountryInfos($codes);
+    saveFile("{$outputDir}/country_names.php", generateCountryNamesDictionary($infos));
+    saveFile("{$outputDir}/country_iso2.php", generateCountryIso2Dictionary($infos));
     echo "done.\n";
 
     echo 'Building txIndicatorType codes... ';
@@ -133,7 +137,7 @@ function getOutputDir($hint = '')
 function fetchXml($servicesUrl)
 {
     $result = [];
-    foreach([
+    foreach ([
         'PaymentInitGatewayPort?xsd=dto/BaseDTO.xsd' => XSD_BASEDTO,
         'PaymentInitGatewayPort?xsd=dto/init/PaymentInit.xsd' => XSD_PAYMENT_INIT,
     ] as $suffix => $key) {
@@ -183,7 +187,7 @@ function extractLanguageCodes(array $xpaths)
     return extractCodes(
         $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="Language"]/xs:restriction/xs:enumeration'),
         '/^[A-Z][A-Z]$/'
-        );
+    );
 }
 
 /**
@@ -196,7 +200,7 @@ function extractCurrencyCodes(array $xpaths)
     return extractCodes(
         $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="Currency"]/xs:restriction/xs:enumeration'),
         '/^[A-Z][A-Z][A-Z]$/'
-        );
+    );
 }
 
 /**
@@ -209,7 +213,7 @@ function extractCountryCodes(array $xpaths)
     return extractCodes(
         $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="Country"]/xs:restriction/xs:enumeration'),
         '/^[A-Z][A-Z][A-Z]$/'
-        );
+    );
 }
 
 /**
@@ -233,7 +237,7 @@ function extractScaExemptionTypeCodes(array $xpaths)
     return extractCodes(
         $xpaths[XSD_BASEDTO]->query('/xs:schema/xs:simpleType[@name="scaExemptionType"]/xs:restriction/xs:enumeration'),
         '/^[A-Z_]+/'
-        );
+    );
 }
 
 /**
@@ -306,21 +310,53 @@ function generateCurrencyDictionary(array $codes)
 /**
  * @param string[] $codes
  *
- * @return string
+ * @return array
  */
-function generateCountryDictionary(array $codes)
+function extractCountryInfos(array $codes)
 {
-    $php = "<?php\n\nreturn [";
+    $result = [];
     foreach ($codes as $code) {
-        $name = '';
-        $iso2 = Punic\Territory::getByCode($code, 'alpha3');
-        if ($iso2) {
-            $name = Punic\Territory::getName($iso2);
-        }
-        if (!$name) {
+        $iso2 = (string) Punic\Territory::getByCode($code, 'alpha3');
+        $name = $iso2 === '' ? '' : (string) Punic\Territory::getName($iso2);
+        if ($name === '') {
             $name = $code;
         }
-        $php .= "\n    " . var_export($code, true) . ' => ' . var_export($name, true) . ',';
+        $result[$code] = compact('iso2', 'name');
+    }
+
+    return $result;
+}
+
+/**
+ * @return string
+ */
+function generateCountryNamesDictionary(array $infos)
+{
+    $php = "<?php\n\nreturn [";
+    foreach ($infos as $code => $info) {
+        $php .= "\n    " . var_export($code, true) . ' => ' . var_export($info['name'], true) . ',';
+    }
+    $php .= "\n];\n";
+
+    return $php;
+}
+
+/**
+ * @return string
+ */
+function generateCountryIso2Dictionary(array $infos)
+{
+    $map = [];
+    foreach ($infos as $code => $info) {
+        if ($info['iso2'] !== '') {
+            $map[$info['iso2']] = $code;
+        }
+    }
+    ksort($map);
+
+    $php = "<?php\n\nreturn [";
+    foreach ($map as $iso2 => $code) {
+        $php .= "\n    " . var_export($iso2, true) . ' => ' . var_export($code, true) . ',';
     }
     $php .= "\n];\n";
 
@@ -344,7 +380,7 @@ function generateList(array $codes)
 }
 
 /**
- * @param string $fileName
+ * @param string $path
  * @param string $php
  */
 function saveFile($path, $php)
@@ -370,8 +406,10 @@ set_error_handler(static function ($errno, $errstr, $errfile, $errline) {
 
 try {
     require_once __DIR__ . '/../vendor/autoload.php';
+
     return main($argv);
 } catch (Exception $x) {
     fwrite(STDERR, trim($x->getMessage()) . "\n");
+
     return 1;
 }

@@ -339,6 +339,7 @@ return $config
     ])
     ->setFinder(PhpCsFixer\Finder::create()
         // ->exclude('folder-to-exclude') // if you want to exclude some folders, you can do it like this!
+        ->name('generate-dictionaries')
         ->in(__DIR__)
     )
 ;
