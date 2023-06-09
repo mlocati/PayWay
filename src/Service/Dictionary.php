@@ -12,7 +12,7 @@ abstract class Dictionary
     public static function getDictionary()
     {
         if (static::$dictionary === null) {
-            $dictionary = include __DIR__ . '/../data/' . static::getDictionaryFile();
+            $dictionary = include static::getDataDir() . static::getDictionaryFile();
             if (!is_array($dictionary)) {
                 throw new RuntimeException('Failed to retrieve the dictionary');
             }
@@ -53,5 +53,13 @@ abstract class Dictionary
     public static function getAvailableCodes()
     {
         return array_keys(static::getDictionary());
+    }
+
+    /**
+     * @return string
+     */
+    protected static function getDataDir()
+    {
+        return __DIR__ . '/../data/';
     }
 }
