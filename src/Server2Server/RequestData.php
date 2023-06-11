@@ -5,7 +5,7 @@ namespace MLocati\PayWay\Server2Server;
 use JsonSerializable;
 use MLocati\PayWay\Service\JsonCleanupTrait;
 
-class Request implements JsonSerializable
+class RequestData implements JsonSerializable
 {
     use JsonCleanupTrait;
 
@@ -44,9 +44,6 @@ class Request implements JsonSerializable
      */
     private $unrecognizedData;
 
-    /**
-     * @var string
-     */
     public function __construct(array $data)
     {
         $this->tid = static::popString($data, 'tid');
