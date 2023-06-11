@@ -122,7 +122,7 @@ class Request implements JsonSerializable
      *
      * @var string
      *
-     * @see \MLocati\PayWay\Server2Server\Request
+     * @see \MLocati\PayWay\Server2Server\RequestData
      */
     private $callbackURL = '';
 
@@ -696,7 +696,7 @@ class Request implements JsonSerializable
      *
      * @return string
      *
-     * @see \MLocati\PayWay\Server2Server\Request
+     * @see \MLocati\PayWay\Server2Server\RequestData
      */
     public function getCallbackURL()
     {
@@ -710,7 +710,7 @@ class Request implements JsonSerializable
      *
      * @return $this
      *
-     * @see \MLocati\PayWay\Server2Server\Request
+     * @see \MLocati\PayWay\Server2Server\RequestData
      */
     public function setCallbackURL($value)
     {

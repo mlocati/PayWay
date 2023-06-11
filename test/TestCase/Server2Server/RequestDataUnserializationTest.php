@@ -2,10 +2,10 @@
 
 namespace MLocati\PayWay\Test\TestCase\Server2Server;
 
-use MLocati\PayWay\Server2Server\Request;
+use MLocati\PayWay\Server2Server\RequestData;
 use MLocati\PayWay\Test\Service\TestCase;
 
-class RequestUnserializationTest extends TestCase
+class RequestDataUnserializationTest extends TestCase
 {
     public static function provideTestCases()
     {
@@ -34,7 +34,7 @@ class RequestUnserializationTest extends TestCase
      */
     public function testUnserializingRequest(array $inputData, array $expectedJson)
     {
-        $request = new Request($inputData);
+        $request = new RequestData($inputData);
         $this->assertSame($expectedJson, $request->jsonSerialize());
     }
 }

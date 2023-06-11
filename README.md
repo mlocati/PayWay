@@ -117,9 +117,9 @@ if ($response->getRc() !== RC::TRANSACTION_OK || $response->isError()) {
 If in the initialization process you configured the callback URL, you can check the received parameters by using some code like this:
 
 ```php
-use MLocati\PayWay\Server2Server\Request;
+use MLocati\PayWay\Server2Server\RequestData;
 
-$request = Server2Server\Request::createFromGlobals();
+$request = Server2Server\RequestData::createFromGlobals();
 ```
 
 And you can inspect what `$request` contains to verify the transaction result (same process as above).
