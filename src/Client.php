@@ -47,20 +47,52 @@ class Client
     private $verifyUnserializer;
 
     /**
-     * @param string $servicesUrl
+     * @param string|object|mixed $servicesUrl
      */
     public function __construct($servicesUrl, $signatureKey, Http\Driver $driver = null)
     {
-        $servicesUrlPrefix = filter_var($servicesUrl, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED);
-        if (!$servicesUrlPrefix || strpos($servicesUrlPrefix, '?') !== false) {
+        $servicesUrlPrefix = static::normalizeServicesUrl($servicesUrl);
+        if ($servicesUrlPrefix === '') {
             throw new RuntimeException("'{$servicesUrl}' is not a valid base URL of the web services");
         }
-        $this->servicesUrlPrefix = rtrim($servicesUrl, '/') . '/';
+        $this->servicesUrlPrefix = $servicesUrlPrefix;
         $this->signatureKey = is_string($signatureKey) ? $signatureKey : '';
         if ($this->signatureKey === '') {
             throw new RuntimeException('Missing the signature key');
         }
         $this->driver = $driver === null ? static::buildDefaultDriver() : $driver;
+    }
+
+    /**
+     * Normalize the value of the services URL.
+     *
+     * @param string|object|mixed $value
+     *
+     * @return string empty string in case of errors
+     */
+    public static function normalizeServicesUrl($value)
+    {
+        switch (gettype($value)) {
+            case 'string':
+                break;
+            case 'object':
+                if (!method_exists($value, '__toString')) {
+                    return '';
+                }
+                $value = (string) $value;
+                break;
+            default:
+                return '';
+        }
+        $value = trim($value);
+        if ($value === '' || strpos($value, '?') !== false || strpos($value, '#') !== false) {
+            return '';
+        }
+        if (!filter_var($value, FILTER_VALIDATE_URL, FILTER_FLAG_PATH_REQUIRED)) {
+            return '';
+        }
+
+        return rtrim($value, '/') . '/';
     }
 
     /**

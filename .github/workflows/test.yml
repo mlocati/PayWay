@@ -44,6 +44,8 @@ jobs:
           --no-interaction
   phpunit:
     name: Run PHPUnit
+    needs:
+      - phpcs
     env:
         CODE_COVERAGE_TOOL: none
         PHPUNIT_FLAGS: ""
