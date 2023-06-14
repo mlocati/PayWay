@@ -880,7 +880,7 @@ class Response implements JsonSerializable
             'scaExemptionType' => $this->scaExemptionType,
         ]);
     }
-    
+
     /**
      * {@inheritdoc}
      *
@@ -889,14 +889,14 @@ class Response implements JsonSerializable
     protected function getSignatureFields()
     {
         return [
-            $this->tid,,
-            $this->shopID,,
-            $this->rc,,
-            $this->errorDesc,,
-            $this->paymentID,,
-            (string) $this->tranID,,
-            $this->authCode,,
-            $this->enrStatus,,
+            $this->tid,
+            $this->shopID,
+            $this->rc,
+            $this->errorDesc,
+            $this->paymentID,
+            (string) $this->tranID,
+            $this->authCode,
+            $this->enrStatus,
             $this->authStatus,
         ];
     }

@@ -238,7 +238,6 @@ trait BaseResponseTrait
     public function checkSignature($key)
     {
         $data = implode('', $this->getSignatureFields());
-        
         try {
             $expectedRawSignature = hash_hmac('sha256', $data, $key, true);
         } catch (ValueError $x) {
