@@ -49,8 +49,9 @@ class RequestSerializationTest extends TestCase
   <soapenv:Body>
     <ser:Verify xmlns:ser="http://services.api.web.cg.igfs.apps.netsw.it/">
       <request>
+        <apiVersion>2.4.1</apiVersion>
         <tid>TEST_SELECTOR</tid>
-        <signature>Lpul0iYkdLmQYg27VIv/RDDz+EWK25yPvCQX2787tmk=</signature>
+        <signature>xcsSKs20XhPUARin3nonxBI6h8haYuNN8Cdcl0PKRvw=</signature>
         <shopID>1701061569</shopID>
         <paymentID>344517213104948134</paymentID>
       </request>
@@ -65,6 +66,7 @@ EOT
     private function getExpectedJSON()
     {
         return [
+            'apiVersion' => '2.4.1',
             'tid' => 'TEST_SELECTOR',
             'shopID' => '1701061569',
             'paymentID' => '344517213104948134',
