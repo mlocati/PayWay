@@ -16,7 +16,7 @@ trait BaseRequestTrait
      *
      * @var string
      */
-    private $apiVersion = '';
+    private $apiVersion = '2.4.1';
 
     /**
      * The merchant terminal code.
