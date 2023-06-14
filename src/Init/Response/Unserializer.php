@@ -32,6 +32,9 @@ class Unserializer
                     break;
                 case 'error':
                     $value = $this->unserializeBoolean($value);
+                    if ($value === null) {
+                        $value = true;
+                    }
                     break;
             }
             if (!method_exists($response, $setter)) {
