@@ -5,6 +5,8 @@ namespace MLocati\PayWay\Service;
 use DateTime;
 use DateTimeInterface;
 use DOMElement;
+use MLocati\PayWay\Exception;
+use ValueError;
 
 trait BaseResponseTrait
 {
@@ -227,6 +229,30 @@ trait BaseResponseTrait
     }
 
     /**
+     * Check the HMAC-SHA256 signature.
+     *
+     * @param string $key
+     *
+     * @throws \MLocati\PayWay\Exception\InvalidSignature
+     */
+    public function checkSignature($key)
+    {
+        $data = implode('', $this->getSignatureFields());
+        try {
+            $expectedRawSignature = hash_hmac('sha256', $data, $key, true);
+        } catch (ValueError $x) {
+            throw new Exception\UnableToCreateSignature($x->getMessage());
+        }
+        if ($expectedRawSignature === false) {
+            throw new Exception\UnableToCreateSignature();
+        }
+        $expectedSignature = base64_encode($expectedRawSignature);
+        if ($this->signature !== $expectedSignature) {
+            throw new Exception\InvalidSignature($expectedSignature, $this->signature);
+        }
+    }
+
+    /**
      * {@inheritdoc}
      *
      * @see \JsonSerializable::jsonSerialize()
@@ -245,4 +271,11 @@ trait BaseResponseTrait
             '_unrecognizedXmlElements' => $this->unrecognizedXmlElements,
         ]);
     }
+
+    /**
+     * @return string[]
+     *
+     * @private
+     */
+    abstract protected function getSignatureFields();
 }

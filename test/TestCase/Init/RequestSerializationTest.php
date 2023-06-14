@@ -97,8 +97,9 @@ class RequestSerializationTest extends TestCase
   <soapenv:Body>
     <ser:Init xmlns:ser="http://services.api.web.cg.igfs.apps.netsw.it/">
       <request>
+        <apiVersion>2.4.1</apiVersion>
         <tid>TEST_SELECTOR</tid>
-        <signature>3QSjtn44jC4Lh9FpXGr0HxiFPs6glZSbH0GLozMfNBA=</signature>
+        <signature>WRDepk9x3vsKVFpqDDIvvKLMYxGzyKnSqXpTj0yHnYo=</signature>
         <shopID>1701061569</shopID>
         <shopUserRef>cliente@email.it</shopUserRef>
         <trType>AUTH</trType>
@@ -154,6 +155,7 @@ EOT
     private function getExpectedJSON()
     {
         return [
+            'apiVersion' => '2.4.1',
             'tid' => 'TEST_SELECTOR',
             'shopID' => '1701061569',
             'shopUserRef' => 'cliente@email.it',

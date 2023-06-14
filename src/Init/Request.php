@@ -1522,7 +1522,15 @@ class Request implements JsonSerializable
             if ($this->level3Info->getBillingCountryCode() !== '' && !in_array($this->level3Info->getBillingCountryCode(), Dictionary\Country::getAvailableCodes(), true)) {
                 throw new Exception\FieldValueOutOfRange('level3Info.billingCountryCode', Dictionary\Country::getAvailableCodes());
             }
-            $num = count($this->level3Info->getProducts());
+            $num = 0;
+            foreach ($this->level3Info->getProducts() as $product) {
+                if ($product->getProductCode() === '') {
+                    throw new Exception\MissingRequiredField("level3Info.product[{$num}].productCode");
+                }
+                if ($product->getProductDescription() === '') {
+                    throw new Exception\MissingRequiredField("level3Info.product[{$num}].productDescription");
+                }
+            }
             if ($num > 10) {
                 throw new Exception\FieldValueTooLong('level3Info.product', 10);
             }
@@ -1593,12 +1601,16 @@ class Request implements JsonSerializable
     protected function getSignatureFields()
     {
         return [
+            $this->apiVersion,
             $this->tid,
+            $this->merID,
+            $this->payInstr,
             $this->shopID,
             $this->shopUserRef,
             $this->shopUserName,
             $this->shopUserAccount,
             $this->shopUserMobilePhone,
+            $this->shopUserIMEI,
             $this->trType,
             (string) $this->amount,
             $this->currencyCode,
@@ -1612,6 +1624,7 @@ class Request implements JsonSerializable
             $this->addInfo4,
             $this->addInfo5,
             $this->payInstrToken,
+            $this->topUpID,
         ];
     }
 }

@@ -16,7 +16,7 @@ trait BaseRequestTrait
      *
      * @var string
      */
-    private $apiVersion = '';
+    private $apiVersion = '2.4.1';
 
     /**
      * The merchant terminal code.
@@ -174,7 +174,6 @@ trait BaseRequestTrait
     public function getSignature($key)
     {
         $data = implode('', $this->getSignatureFields());
-
         try {
             $rawSignature = hash_hmac('sha256', $data, $key, true);
         } catch (ValueError $x) {
