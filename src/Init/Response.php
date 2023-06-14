@@ -74,4 +74,21 @@ class Response implements JsonSerializable
             'redirectURL' => $this->redirectURL,
         ]);
     }
+
+    /**
+     * {@inheritdoc}
+     *
+     * see \MLocati\PayWay\Service\BaseResponseTrait::getSignatureFields()
+     */
+    protected function getSignatureFields()
+    {
+        return [
+            $this->tid,
+            $this->shopID,
+            $this->rc,
+            $this->errorDesc,
+            $this->paymentID,
+            $this->redirectURL,
+        ];
+    }
 }

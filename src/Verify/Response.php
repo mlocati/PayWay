@@ -880,4 +880,24 @@ class Response implements JsonSerializable
             'scaExemptionType' => $this->scaExemptionType,
         ]);
     }
+    
+    /**
+     * {@inheritdoc}
+     *
+     * see \MLocati\PayWay\Service\BaseResponseTrait::getSignatureFields()
+     */
+    protected function getSignatureFields()
+    {
+        return [
+            $this->tid,,
+            $this->shopID,,
+            $this->rc,,
+            $this->errorDesc,,
+            $this->paymentID,,
+            (string) $this->tranID,,
+            $this->authCode,,
+            $this->enrStatus,,
+            $this->authStatus,
+        ];
+    }
 }
