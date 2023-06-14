@@ -102,9 +102,13 @@ class Request implements JsonSerializable
     protected function getSignatureFields()
     {
         return [
+            $this->apiVersion,
             $this->tid,
+            $this->merID,
+            $this->payInstr,
             $this->shopID,
             $this->paymentID,
+            (string) $this->refTranID,
         ];
     }
 }

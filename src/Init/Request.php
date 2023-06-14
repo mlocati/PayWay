@@ -1593,12 +1593,16 @@ class Request implements JsonSerializable
     protected function getSignatureFields()
     {
         return [
+            $this->apiVersion,
             $this->tid,
+            $this->merID,
+            $this->payInstr,
             $this->shopID,
             $this->shopUserRef,
             $this->shopUserName,
             $this->shopUserAccount,
             $this->shopUserMobilePhone,
+            $this->shopUserIMEI,
             $this->trType,
             (string) $this->amount,
             $this->currencyCode,
@@ -1612,6 +1616,7 @@ class Request implements JsonSerializable
             $this->addInfo4,
             $this->addInfo5,
             $this->payInstrToken,
+            $this->topUpID,
         ];
     }
 }
