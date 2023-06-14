@@ -48,7 +48,7 @@ trait UnserializerTrait
      */
     protected function listDOMElements(DOMElement $parent)
     {
-        for ($child = $parent->firstChild; $child = $child->nextSibling; $child) {
+        for ($child = $parent->firstChild; $child; $child = $child->nextSibling) {
             if ($child instanceof DOMElement) {
                 yield $child;
             }
