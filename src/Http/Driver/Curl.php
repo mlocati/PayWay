@@ -21,42 +21,13 @@ class Curl implements Driver
         }
         try {
             $responseHeaders = [];
-            $options = [
-                CURLOPT_URL => $url,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$responseHeaders) {
-                    $this->collectHeader($header, $responseHeaders);
-
-                    return strlen($header);
-                },
-            ];
-            $method = strtoupper($method);
-            switch ($method) {
-                case 'GET':
-                    $options[CURLOPT_HTTPGET] = true;
-                    break;
-                case 'POST':
-                    $options[CURLOPT_POST] = true;
-                    break;
-                case 'PUT':
-                    $options[CURLOPT_PUT] = true;
-                    break;
-                case 'HEAD':
-                    $options[CURLOPT_NOBODY] = true;
-                    break;
-                default:
-                    $options[CURLOPT_CUSTOMREQUEST] = $method;
-                    break;
-            }
-            $body = (string) $body;
-            if ($body !== '') {
-                $options[CURLOPT_POSTFIELDS] = $body;
-            }
-            $serializedHeaders = $this->serializeHeaders($headers);
-            if ($serializedHeaders !== []) {
-                $options[CURLOPT_HTTPHEADER] = $serializedHeaders;
-            }
+            $options = $this->buildCurlOptions(
+                (string) $url,
+                strtoupper($method),
+                $this->serializeRequestHeaders($headers),
+                (string) $body,
+                $responseHeaders
+            );
             if (!curl_setopt_array($ch, $options)) {
                 throw new NetworkUnavailable($this->describeCurlError($ch, 'curl_setopt_array() failed: %s'));
             }
@@ -73,9 +44,56 @@ class Curl implements Driver
     }
 
     /**
+     * @param string $url
+     * @param string $method
+     * @param string[] $requestHeaders
+     * @param string $body
+     *
+     * @return array
+     */
+    protected function buildCurlOptions($url, $method, array $requestHeaders, $body, array &$responseHeaders)
+    {
+        $options = [
+            CURLOPT_URL => $url,
+            CURLOPT_FOLLOWLOCATION => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$responseHeaders) {
+                $this->collectResponseHeader($header, $responseHeaders);
+
+                return strlen($header);
+            },
+        ];
+        switch ($method) {
+            case 'GET':
+                $options[CURLOPT_HTTPGET] = true;
+                break;
+            case 'POST':
+                $options[CURLOPT_POST] = true;
+                break;
+            case 'PUT':
+                $options[CURLOPT_PUT] = true;
+                break;
+            case 'HEAD':
+                $options[CURLOPT_NOBODY] = true;
+                break;
+            default:
+                $options[CURLOPT_CUSTOMREQUEST] = $method;
+                break;
+        }
+        if ($body !== '') {
+            $options[CURLOPT_POSTFIELDS] = $body;
+        }
+        if ($requestHeaders !== []) {
+            $options[CURLOPT_HTTPHEADER] = $requestHeaders;
+        }
+
+        return $options;
+    }
+
+    /**
      * @return string[]
      */
-    protected function serializeHeaders(array $headers)
+    protected function serializeRequestHeaders(array $headers)
     {
         $result = [];
         foreach ($headers as $key => $value) {
@@ -94,7 +112,7 @@ class Curl implements Driver
     /**
      * @param string $header
      */
-    protected function collectHeader($header, array &$responseHeaders)
+    protected function collectResponseHeader($header, array &$responseHeaders)
     {
         $match = null;
         $header = trim($header);
@@ -124,6 +142,8 @@ class Curl implements Driver
     /**
      * @param resource|\CurlHandle $ch
      * @param string $messagePattern
+     *
+     * @return string
      */
     protected function describeCurlError($ch, $messagePattern)
     {
