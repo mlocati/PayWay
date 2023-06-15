@@ -3,11 +3,6 @@
 
 # MLocati's unofficial BCC PayWay (IGFS Buy Now) client library for PHP
 
-> **Warning**
->
-> This package is still in a development stage: **DO NOT USE IT**
->
-
 This unofficial PHP library can help you accepting payments using the BCC (Banca di Credito Cooperativo) PayWay, which is a service powered by the IGFS (Internet Gateway Financial Systems) Buy Now service.
 
 It supports any PHP version, ranging from PHP 5.5 to the most recent PHP versions (8.2 as for now).
