@@ -105,8 +105,12 @@ class Client
         if (!$rawResponse->is2xx()) {
             throw new Exception\InvalidHttpResponseCode($rawResponse);
         }
+        $response = $this->getInitUnserializer()->unserialize($rawResponse->getBody());
+        if (!$response->isError() || $response->getSignature() !== '') {
+            $response->checkSignature($this->signatureKey);
+        }
 
-        return $this->getInitUnserializer()->unserialize($rawResponse->getBody());
+        return $response;
     }
 
     /**
@@ -119,8 +123,12 @@ class Client
         if (!$rawResponse->is2xx()) {
             throw new Exception\InvalidHttpResponseCode($rawResponse);
         }
+        $response = $this->getVerifyUnserializer()->unserialize($rawResponse->getBody());
+        if (!$response->isError() || $response->getSignature() !== '') {
+            $response->checkSignature($this->signatureKey);
+        }
 
-        return $this->getVerifyUnserializer()->unserialize($rawResponse->getBody());
+        return $response;
     }
 
     /**

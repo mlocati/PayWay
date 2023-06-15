@@ -65,7 +65,6 @@ $response = $client->init($request);
 if ($response->getRc() !== RC::TRANSACTION_OK || $response->isError() || $response->getRedirectURL() === '') {
     throw new \Exception('Transaction failed: ' . $response->getErrorDesc());
 }
-$response->checkSignature('Your kSig digital signature');
 ```
 
 At this point, you you have a succesfull initialization response.
@@ -113,9 +112,6 @@ $response = $client->verify($request);
 if ($response->getRc() !== RC::TRANSACTION_OK || $response->isError()) {
     throw new \Exception('Transaction failed: ' . $response->getErrorDesc());
 }
-
-$response->checkSignature('Your kSig digital signature');
-
 ```
 
 ## Server2Server communication (callback URL)
