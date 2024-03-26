@@ -9,6 +9,30 @@ const XSD_PAYMENT_INIT = 1;
  */
 
 /**
+ * @return void
+ */
+function loadAutoload()
+{
+    if (class_exists(Punic\Language::class)) {
+        return;
+    }
+    $triedWith = [];
+    $file = __DIR__ . '/../vendor/autoload.php';
+    if (file_exists($file)) {
+        require_once $file;
+        return;
+    }
+    $triedWith[] = $file;
+    $file = __DIR__ . '/../../../autoload.php';
+    if (file_exists($file)) {
+        require_once $file;
+        return;
+    }
+    $triedWith[] = $file;
+    throw new RuntimeException("Failed to find the Composer autoloa file.\nWe tried with:\n- " . implode("\n- ", $triedWith));
+}
+
+/**
  * @param string $thisCmd
  */
 function showSyntax($thisCmd)
@@ -406,7 +430,7 @@ set_error_handler(static function ($errno, $errstr, $errfile, $errline) {
 }, -1);
 
 try {
-    require_once __DIR__ . '/../vendor/autoload.php';
+    loadAutoload();
 
     return main($argv);
 } catch (Exception $x) {
