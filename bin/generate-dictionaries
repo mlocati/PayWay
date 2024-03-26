@@ -1,3 +1,4 @@
+#!/usr/bin/env php
 <?php
 
 const XSD_BASEDTO = 0;
