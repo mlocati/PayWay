@@ -34,7 +34,7 @@ $request
     // Set the currency: for the list of available currencies, use Currency::getDictionary()
     ->setCurrencyCode(Currency::CODE_EUR)
     // Set the language to be displayed to the customer when filling-in the data: for the list of available language, use Language::getDictionary()
-    ->langID(Language::CODE_ITALIAN)
+    ->setLangID(Language::CODE_ITALIAN)
     // The page where the customer will be redirected to once your customer will have paid
     ->setNotifyURL('https://your.domain/process-completed?shopID=Order987Attempt1')
     // A page to be called in case of technical issues (please remark that if the transaction failed, the customer will be still redirected to the notifyURL page)
@@ -52,7 +52,7 @@ use MLocati\PayWay\Dictionary\RC;
 
 $client = new Client(
     'https://your.bank.com/UNI_CG_SERVICES/services',
-    'Your kSig digital signature'
+    'Your kSig digital signature'        //this is the number you receive from the Bank upon activation
 );
 
 $response = $client->init($request);
@@ -101,6 +101,12 @@ $request
     // Set the remote server-assigned payment ID
     ->setPaymentID($paymentID)
 ;
+
+//Connect to the bank again
+$client = new Client(
+    'https://your.bank.com/UNI_CG_SERVICES/services',
+    'Your kSig digital signature'        //this is the number you receive from the Bank upon activation
+);
 
 $response = $client->verify($request);
 
